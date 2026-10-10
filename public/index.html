@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a73e8">
+<title>WebHosting: Deploy Websites</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';document.head.appendChild(s)"></script>
+<style>
+:root{--bg:#f6f8fc;--card:#fff;--tx:#1b1f2a;--mut:#667085;--pri:#1a73e8;--pc:#e8f0fe;--ok:#188038;--okb:#e6f4ea;--warn:#b06000;--warnb:#fef7e0;--bad:#d93025;--badb:#fce8e6;--bd:#e3e7ee}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171d2c;--tx:#eef1f8;--mut:#9aa4bd;--pc:#1d2b4a;--okb:#14301e;--warnb:#3a2f10;--badb:#3d1a18;--bd:#262e45}}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font-family:Roboto,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.bar{background:var(--pri);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.bar h1{font-size:20px;font-weight:500;flex:1}.bar button{background:none;color:#fff;font-size:22px;padding:2px 8px}
+.wrap{max-width:640px;margin:auto;padding:16px;padding-bottom:90px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;margin-bottom:14px}
+.btn{display:block;width:100%;padding:14px;border-radius:28px;background:var(--pri);color:#fff;font-weight:500;font-size:16px;text-align:center;text-decoration:none;margin-top:10px}
+.btn.o{background:transparent;color:var(--pri);border:1px solid var(--bd)}.btn.bad{background:var(--bad)}.btn.ok{background:var(--ok)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;align-items:center;gap:10px}.sp{flex:1;min-width:0}
+.mut{color:var(--mut);font-size:13px}h2{font-size:22px;font-weight:500}h3{font-size:17px;font-weight:500}
+input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-size:16px}
+input:focus{outline:2px solid var(--pri);border-color:transparent}
+.chip{display:inline-block;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:500;background:var(--okb);color:var(--ok)}
+.chip.w{background:var(--warnb);color:var(--warn)}.chip.b{background:var(--badb);color:var(--bad)}
+.opt{display:flex;gap:12px;align-items:center;border:2px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;background:var(--card);width:100%;text-align:left}
+.opt.a{border-color:var(--pri);background:var(--pc)}.opt .i{font-size:26px}
+.drop{border:2px dashed var(--bd);border-radius:18px;padding:30px 16px;text-align:center;cursor:pointer;color:var(--mut)}
+.drop.a{border-color:var(--pri);background:var(--pc);color:var(--tx)}.drop .i{font-size:40px}
+.prog{height:8px;border-radius:9px;background:var(--bd);overflow:hidden}.prog i{display:block;height:100%;background:var(--pri);transition:width .3s}
+.steps{display:flex;gap:6px;margin-bottom:16px}.steps i{flex:1;height:4px;border-radius:4px;background:var(--bd)}.steps i.a{background:var(--pri)}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:auto;padding:16px 22px;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:6}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--card);width:100%;max-width:640px;border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#202124;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;max-width:90%;font-size:14px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);font-size:14px}.kv:last-child{border:0}.kv b{text-align:right;word-break:break-all}
+code{background:var(--pc);padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all}
+.center{text-align:center;padding:48px 16px}.big{font-size:64px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{text-align:center}.stat b{font-size:28px;display:block}
+.sp8{height:10px}.link{background:var(--pc);border-radius:12px;padding:12px;word-break:break-all;font-size:14px;margin:12px 0}
+</style>
+</head>
+<body><div id="app"></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY=864e5;
+const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
+const daysLeft=s=>Math.max(0,Math.ceil((s.expiresAt-Date.now())/DAY));
+const fmtSize=b=>b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
+const fmtDate=t=>new Date(t).toLocaleString([], {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
+function sheet(html){const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="sheet">'+html+'</div>';m.addEventListener('click',e=>{if(e.target===m)m.remove()});document.body.appendChild(m);return m}
+async function copy(t){try{await navigator.clipboard.writeText(t);toast('Link copied')}catch(e){prompt('Copy this link',t)}}
+
+/* owner token (identifies this browser's projects; no login needed) */
+const OWN=(()=>{try{let t=localStorage.getItem('wh_owner');if(!/^[a-f0-9]{32,64}$/.test(t||'')){t=[...crypto.getRandomValues(new Uint8Array(24))].map(b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('wh_owner',t)}return t}catch(e){return [...crypto.getRandomValues(new Uint8Array(24))].map(b=>b.toString(16).padStart(2,'0')).join('')}})();
+async function api(method,url,body){
+  const o={method,headers:{'x-owner':OWN}};
+  if(body instanceof Blob){o.body=body}else if(body){o.body=JSON.stringify(body);o.headers['content-type']='application/json'}
+  let r;try{r=await fetch(url,o)}catch(e){throw new Error('Cannot reach server. Check your internet connection.')}
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(d.error||'Request failed ('+r.status+')');return d}
+
+const S={view:'dash',sites:[],cur:null,cfg:{displayBase:'webhost.app',freeDays:30,maxFile:20971520,maxSite:104857600},err:''};
+let D=null;
+const newD=()=>({step:1,zip:null,fileMap:null,files:0,entryOk:false,name:'',type:'free',val:'',avail:null,why:'',progress:0,site:null});
+
+/* ---------- ZIP ---------- */
+const norm=p=>{const o=[];p.replace(/\\/g,'/').split('/').forEach(x=>{if(x==='..')o.pop();else if(x&&x!=='.')o.push(x)});return o.join('/')};
+async function readZip(blob){
+  if(!window.JSZip)throw new Error('ZIP library could not load. Check your internet connection.');
+  const z=await JSZip.loadAsync(blob);
+  const names=Object.keys(z.files).filter(n=>!z.files[n].dir&&!/(^|\/)(__MACOSX\/|\.DS_Store$)/.test(n));
+  if(!names.length)throw new Error('ZIP file is empty.');
+  const roots=new Set(names.map(n=>n.split('/')[0]));
+  const strip=(roots.size===1&&names.every(n=>n.includes('/')))?[...roots][0]+'/':'';
+  const out={};for(const n of names){const p=norm(n.slice(strip.length));if(p)out[p]=await z.files[n].async('blob')}
+  return out}
+
+/* ---------- views ---------- */
+const app=()=>$('#app');
+const bar=(t,b)=>`<div class="bar">${b?'<button id="bk" aria-label="Back">←</button>':''}<h1>${esc(t)}</h1></div>`;
+function render(){({dash:vDash,deploy:vDeploy,site:vSite}[S.view]||vDash)()}
+async function load(){try{S.sites=(await api('GET','/api/sites')).sites;S.err=''}catch(e){S.err=e.message}}
+
+function vDash(){
+  const list=S.sites.map(s=>{const d=daysLeft(s);return `<div class="card" data-o="${s.id}" style="cursor:pointer"><div class="row"><div class="sp"><h3>${esc(s.name)}</h3><div class="mut" style="margin-top:2px">${esc(s.domain)}</div></div><span class="chip ${d<=0?'b':d<=5?'w':''}">${d<=0?'Expired':'Deployed'}</span></div>
+  <div class="kv" style="margin-top:8px"><span>Deployed At</span><b>${fmtDate(s.deployedAt)}</b></div><div class="kv"><span>Expires in</span><b>${d} Days</b></div></div>`}).join('');
+  app().innerHTML=bar('WebHosting')+`<div class="wrap">${S.err?`<div class="card" style="color:var(--bad)">Couldn't load projects. ${esc(S.err)}<button class="btn o" id="rt">Retry</button></div>`:''}
+  ${S.sites.length?list:(S.err?'':`<div class="center"><div class="big">🌐</div><h2 style="margin:12px 0 6px">No projects yet</h2><p class="mut" style="margin-bottom:22px">Upload your website ZIP and go live in seconds.</p><button class="btn" id="n1">Deploy First Project</button></div>`)}</div>
+  ${S.sites.length?'<button class="btn fab" id="n2">＋ Deploy New Project</button>':''}`;
+  const rt=$('#rt');if(rt)rt.onclick=async()=>{await load();render()};
+  ['n1','n2'].forEach(i=>{const b=$('#'+i);if(b)b.onclick=()=>{D=newD();S.view='deploy';render()}});
+  document.querySelectorAll('[data-o]').forEach(c=>c.onclick=async()=>{S.cur=S.sites.find(s=>s.id===c.dataset.o);S.view='site';render()})}
+
+function vDeploy(){
+  const st=D.step,B=S.cfg.displayBase;
+  const dots=`<div class="steps">${[1,2,3].map(i=>`<i class="${i<=st?'a':''}"></i>`).join('')}</div>`;
+  let body='';
+  if(st===1)body=`${dots}<h2>Deploy New Project</h2><p class="mut" style="margin:6px 0 18px">Select your website ZIP file (must contain index.html).</p>
+    <div class="drop ${D.zip?'a':''}" id="dz"><div class="i">${D.zip?'✅':'📦'}</div><p style="margin-top:8px;font-weight:500">${D.zip?esc(D.zip.name):'Tap to select ZIP file'}</p><p class="mut">${D.zip?fmtSize(D.zip.size)+' · '+D.files+' files':'or drag & drop here'}</p></div>
+    <input type="file" id="zf" accept=".zip,application/zip,application/x-zip-compressed" hidden>
+    <div style="margin-top:16px"><label class="mut">Project name</label><div style="height:6px"></div><input id="pn" value="${esc(D.name)}" placeholder="My Website"></div>
+    <button class="btn" id="nx" ${D.zip&&D.entryOk?'':'disabled'}>Continue to domain</button>`;
+  else if(st===2)body=`${dots}<h2>Choose a domain type</h2><p class="mut" style="margin:6px 0 16px">Choose the address visitors will use for this project.</p>
+    <button class="opt ${D.type==='free'?'a':''}" data-t="free"><span class="i">🆓</span><span><b>Free Subdomain</b><br><span class="mut">yourname.${esc(B)}</span></span></button>
+    <button class="opt ${D.type==='custom'?'a':''}" data-t="custom"><span class="i">🔗</span><span><b>Custom Domain</b><br><span class="mut">yourdomain.com</span></span></button>
+    <div class="sp8"></div>${D.type==='free'?`<div class="row"><input id="dv" value="${esc(D.val)}" placeholder="my-site" autocapitalize="none" autocomplete="off"><span class="mut">.${esc(B)}</span></div>`:`<input id="dv" value="${esc(D.val)}" placeholder="example.com" autocapitalize="none" autocomplete="off"><p class="mut" style="margin-top:6px">Do not enter 'http://' or 'https://' in domain name fields.</p>`}
+    <div id="av" style="margin:10px 0;min-height:22px;font-weight:500">${D.avail===true?'<span style="color:var(--ok)">✔ Available</span>':D.avail===false?'<span style="color:var(--bad)">✖ '+esc(D.why||'Not available')+'</span>':''}</div>
+    <button class="btn o" id="ck">Check availability</button><button class="btn" id="dp" ${D.avail===true?'':'disabled'}>Deploy Project</button><button class="btn o" id="pv">Back</button>`;
+  else if(st===3)body=`<div class="center"><div class="big">🚀</div><h2 style="margin:12px 0">Deploying…</h2><p class="mut" id="dm" style="margin-bottom:18px">Preparing</p><div class="prog"><i id="pg" style="width:${D.progress}%"></i></div></div>`;
+  else body=`<div class="center" style="padding-bottom:20px"><div class="big">🎉</div><h2 style="margin:12px 0 4px">Deployment Complete</h2><p class="mut">Your website is live.</p></div>
+    <div class="card"><div class="kv"><span>Domain</span><b>${esc(D.site.domain)}</b></div><div class="kv"><span>Deployed At</span><b>${fmtDate(D.site.deployedAt)}</b></div><div class="kv"><span>Valid for</span><b>${S.cfg.freeDays} Days</b></div></div>
+    <div class="link">${esc(D.site.url)}</div>
+    <button class="btn" id="vs">Visit Site</button><button class="btn ok" id="sh">Share Link</button><button class="btn o" id="cl">Copy Link</button><button class="btn o" id="dn">Done</button>`;
+  app().innerHTML=bar('Deploy New Project',st<3)+`<div class="wrap">${body}</div>`;
+  const bk=$('#bk');if(bk)bk.onclick=()=>{if(st===2){D.step=1;render()}else{S.view='dash';render()}};
+  if(st===1){
+    const zf=$('#zf'),dz=$('#dz');dz.onclick=()=>zf.click();
+    ['dragover','dragenter'].forEach(e=>dz.addEventListener(e,x=>{x.preventDefault();dz.classList.add('a')}));
+    dz.addEventListener('drop',x=>{x.preventDefault();pick(x.dataTransfer.files[0])});zf.onchange=()=>pick(zf.files[0]);
+    $('#pn').oninput=e=>{D.name=e.target.value};
+    $('#nx').onclick=()=>{D.name=$('#pn').value.trim();if(D.name.length<2)return toast('Enter a project name');D.step=2;D.val=D.type==='free'?slug(D.name):'';D.avail=null;render()};
+  }
+  if(st===2){
+    document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{D.type=b.dataset.t;D.val=D.type==='free'?slug(D.name):'';D.avail=null;render()});
+    $('#dv').oninput=e=>{D.val=e.target.value;D.avail=null;$('#av').innerHTML='';$('#dp').disabled=true};
+    $('#ck').onclick=checkDomain;$('#pv').onclick=()=>{D.step=1;render()};$('#dp').onclick=deploy;
+  }
+  if(st===4){$('#vs').onclick=()=>window.open(D.site.url,'_blank');$('#sh').onclick=()=>shareSheet(D.site);$('#cl').onclick=()=>copy(D.site.url);$('#dn').onclick=async()=>{await load();S.view='dash';render()}}
+}
+async function pick(file){
+  if(!file)return;
+  if(!/\.zip$/i.test(file.name))return toast('Please select a .zip file');
+  try{const f=await readZip(file),keys=Object.keys(f);
+    D.zip=file;D.fileMap=f;D.files=keys.length;D.entryOk=keys.includes('index.html');
+    const big=keys.find(k=>f[k].size>S.cfg.maxFile),tot=keys.reduce((a,k)=>a+f[k].size,0);
+    if(!D.entryOk){render();return toast('ZIP must contain an index.html file at its top level')}
+    if(big){D.entryOk=false;render();return toast(big+' is larger than '+fmtSize(S.cfg.maxFile))}
+    if(tot>S.cfg.maxSite){D.entryOk=false;render();return toast('Website is larger than '+fmtSize(S.cfg.maxSite))}
+    if(!D.name)D.name=file.name.replace(/\.zip$/i,'').replace(/[_-]+/g,' ').trim();render()}
+  catch(e){D.zip=null;D.fileMap=null;D.entryOk=false;render();toast(e.message||'Invalid ZIP file')}}
+async function checkDomain(){
+  const b=$('#ck');b.disabled=true;
+  try{const r=await api('GET','/api/check?type='+D.type+'&value='+encodeURIComponent(D.val.trim()));
+    D.avail=r.available;D.why=r.reason||'';if(r.available)D.val=r.value}
+  catch(e){D.avail=false;D.why=e.message}
+  render()}
+async function deploy(){
+  D.step=3;D.progress=5;render();
+  const set=(p,m)=>{D.progress=p;const g=$('#pg'),d=$('#dm');if(g)g.style.width=p+'%';if(d)d.textContent=m};
+  let id=null;
+  try{
+    set(10,'Configuring domain');
+    const site=await api('POST','/api/sites',{name:D.name,type:D.type,domain:D.val});id=site.id;
+    const ent=Object.entries(D.fileMap);let i=0,done=0;
+    const worker=async()=>{while(i<ent.length){const [p,b]=ent[i++];await api('PUT','/api/sites/'+id+'/file?path='+encodeURIComponent(p),b);done++;set(15+Math.round(done/ent.length*75),'Uploading files ('+done+'/'+ent.length+')')}};
+    await Promise.all([worker(),worker(),worker(),worker()]);
+    set(95,'Publishing website');D.site=await api('POST','/api/sites/'+id+'/finish');
+    set(100,'Done');await load();await new Promise(r=>setTimeout(r,300));D.step=4;render()
+  }catch(e){if(id)try{await api('DELETE','/api/sites/'+id)}catch(_){}D.step=2;D.avail=null;render();toast('Deployment failed: '+(e.message||'try again'))}}
+
+function shareSheet(s){
+  const u=s.url,txt=encodeURIComponent(s.name+' — '+u);
+  const m=sheet(`<h3>Share website</h3><p class="mut" style="margin-top:4px">Anyone with this link can open your website.</p><div class="link">${esc(u)}</div>
+   <button class="btn" id="sc">Copy Link</button>
+   <a class="btn o" target="_blank" rel="noopener" href="https://wa.me/?text=${txt}">WhatsApp</a>
+   <a class="btn o" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(u)}&text=${encodeURIComponent(s.name)}">Telegram</a>
+   ${navigator.share?'<button class="btn o" id="sn">More…</button>':''}`);
+  $('#sc').onclick=()=>copy(u);const sn=$('#sn');if(sn)sn.onclick=()=>navigator.share({title:s.name,url:u}).catch(()=>{})}
+
+function vSite(){
+  const s=S.cur;if(!s){S.view='dash';return render()}
+  const d=daysLeft(s),ctry=Object.entries(s.stats.countries).sort((a,b)=>b[1]-a[1]);
+  app().innerHTML=bar(s.name,true)+`<div class="wrap">
+  <div class="card"><div class="row"><div class="sp"><h3>${esc(s.domain)}</h3></div><span class="chip ${d<=0?'b':d<=5?'w':''}">${d<=0?'Expired':'Deployed'}</span></div>
+   <div class="kv" style="margin-top:8px"><span>Deployed At</span><b>${fmtDate(s.deployedAt)}</b></div><div class="kv"><span>Files</span><b>${s.files} · ${fmtSize(s.size)}</b></div><div class="kv"><span>Expires in</span><b>${d} Days</b></div>
+   <div class="sp8"></div><div class="prog"><i style="width:${d/S.cfg.freeDays*100}%"></i></div>
+   <div class="link">${esc(s.url)}</div></div>
+  <button class="btn" id="vs">Visit Site</button>
+  <button class="btn ok" id="sh">Share Link</button>
+  <button class="btn o" id="cl">Copy Link</button>
+  <button class="btn o" id="rn">Check countdown &amp; renew website</button>
+  <h3 style="margin:22px 0 10px">Analytics</h3><div class="g2"><div class="card stat"><b>${s.stats.total}</b><span class="mut">Total Visitors</span></div><div class="card stat"><b>${s.stats.unique}</b><span class="mut">Unique Visitors</span></div></div>
+  <div class="card"><b>Top Countries</b>${ctry.length?ctry.map(([c,n])=>`<div class="kv"><span>${esc(c)}</span><b>${n}</b></div>`).join(''):'<p class="mut" style="margin-top:6px">No visits yet.</p>'}</div>
+  ${s.type==='custom'?`<div class="card"><h3>Connect Your Custom Domain</h3><p class="mut" style="margin:6px 0 10px">Domain Configuration — add these records at your domain registrar, and add the domain to your hosting server.</p>
+   <div class="kv"><span>A Record (root)</span><b><code>@</code> → <code>server IP</code> (or ALIAS → <code>${esc(location.hostname)}</code>)</b></div><div class="kv"><span>CNAME (WWW variant)</span><b><code>www</code> → <code>${esc(location.hostname)}</code></b></div></div>`:''}
+  <button class="btn bad" id="dl">Delete Project</button></div>`;
+  $('#bk').onclick=async()=>{await load();S.view='dash';S.cur=null;render()};
+  $('#vs').onclick=()=>window.open(s.url,'_blank');$('#sh').onclick=()=>shareSheet(s);$('#cl').onclick=()=>copy(s.url);
+  $('#rn').onclick=()=>{const m=sheet(`<h3>Renew website</h3><p class="mut" style="margin:6px 0 14px">Your website stays online while the countdown is running.</p><div class="center" style="padding:14px"><div class="big" style="font-size:52px">${daysLeft(s)}</div><p class="mut">Days left</p></div><button class="btn ok" id="ry">Renew +${S.cfg.freeDays} days</button>`);
+    $('#ry').onclick=async()=>{try{const n=await api('POST','/api/sites/'+s.id+'/renew');S.cur=n;S.sites=S.sites.map(x=>x.id===n.id?n:x);m.remove();toast('Website renewed');vSite()}catch(e){toast(e.message)}}};
+  $('#dl').onclick=()=>{const m=sheet(`<h3>Delete Project</h3><p class="mut" style="margin:8px 0 14px">Are you absolutely sure? Your domain (<b>${esc(s.domain)}</b>) and all website files will be permanently deleted.</p><input id="cf" placeholder="Type domain to confirm"><button class="btn bad" id="cy">Delete</button><button class="btn o" id="cn">Cancel</button>`);
+    $('#cn').onclick=()=>m.remove();
+    $('#cy').onclick=async()=>{if($('#cf').value.trim().toLowerCase()!==s.domain)return toast("Domain doesn't match");try{await api('DELETE','/api/sites/'+s.id);await load();m.remove();S.cur=null;S.view='dash';render();toast('Project deleted')}catch(e){toast("Couldn't delete project. Please try again.")}}}}
+
+(async()=>{try{S.cfg=await api('GET','/api/config')}catch(e){}await load();render()})();
+</script>
+</body>
+</html>
