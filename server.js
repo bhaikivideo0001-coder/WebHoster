@@ -9,6 +9,7 @@ const DISPBASE = BASE || 'webhost.app';
 const FREE_DAYS = +process.env.FREE_DAYS || 30, DAY = 864e5;
 const MAX_FILE = (+process.env.MAX_FILE_MB || 20) * 1048576, MAX_SITE = (+process.env.MAX_SITE_MB || 100) * 1048576;
 const MAX_SITES = +process.env.MAX_SITES_PER_USER || 10, MAX_FILES = 2000;
+const FRAME = (process.env.ALLOW_FRAME_FROM || '').trim();   // e.g. "https://imrich.in https://www.imrich.in" (sites allowed to embed this app in an iframe)
 const RESERVED = ['www', 'admin', 'api', 'mail', 'app', 'ftp', 'root', 'test', 'webhost', 'support', 's'];
 const SITES_DIR = path.join(DATA, 'sites');
 fs.mkdirSync(SITES_DIR, { recursive: true });
@@ -160,7 +161,7 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname === '/healthz') return send(res, 200, 'ok');
     if (u.pathname === '/' || u.pathname === '/index.html') {
       const html = await fsp.readFile(path.join(__dirname, 'public', 'index.html'));
-      return send(res, 200, html, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'" });
+      return send(res, 200, html, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', ...(FRAME ? {} : { 'X-Frame-Options': 'DENY' }), 'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors " + (FRAME || "'none'") });
     }
     return notFound(res);
   } catch (e) {
