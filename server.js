@@ -160,7 +160,8 @@ const server = http.createServer(async (req, res) => {
     if (u.pathname.startsWith('/api/')) return await api(req, res, u);
     if (u.pathname === '/healthz') return send(res, 200, 'ok');
     if (u.pathname === '/' || u.pathname === '/index.html') {
-      const html = await fsp.readFile(path.join(__dirname, 'public', 'index.html'));
+      let html; for (const f of [path.join(__dirname, 'public', 'index.html'), path.join(__dirname, 'index.html')]) { try { html = await fsp.readFile(f); break; } catch (e) { } }
+      if (!html) return send(res, 500, htmlPage('Setup error', 'public/index.html file is missing in your GitHub repo. Upload it inside a folder named <b>public</b>.'), { 'Content-Type': 'text/html; charset=utf-8' });
       return send(res, 200, html, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', ...(FRAME ? {} : { 'X-Frame-Options': 'DENY' }), 'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors " + (FRAME || "'none'") });
     }
     return notFound(res);
